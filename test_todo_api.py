@@ -1,12 +1,13 @@
 import json
 import requests
+import uuid
 
 # api docs: https://todo.pixegami.io/docs
 # api code: https://github.com/pixegami/todo-list-api
 ENDPOINT = 'https://todo.pixegami.io'
-USER_ID = 'test_user_a3d'
 
 def get_payload():
+    USER_ID = f'test_user_{uuid.uuid4().hex}'
     return {
         "content": "test content",
         "user_id": USER_ID,
@@ -26,6 +27,11 @@ def update_task(payload):
 
 def get_task(task_id):
     endpoint = f'{ENDPOINT}/get-task/{task_id}'
+    response = requests.get(endpoint)
+    return response
+
+def list_tasks(user_id):
+    endpoint = f'{ENDPOINT}/list-tasks/{user_id}'
     response = requests.get(endpoint)
     return response
 
@@ -69,3 +75,19 @@ def test_can_update_task():
     get_task_data = get_task_response.json()
     assert get_task_data['content'] == payload['content']
     assert get_task_data['is_done'] == payload['is_done']
+
+def test_can_list_tasks():
+    total_tasks = 3
+    payload = get_payload()
+    user_id = payload['user_id']
+    for _ in range(total_tasks):
+        create_task_response = create_task(payload)
+        assert create_task_response.status_code == 200
+    
+    list_task_response = list_tasks(user_id)
+    assert list_task_response.status_code == 200
+    
+    data = list_task_response.json()
+    print(data)
+    tasks = data['tasks']
+    assert len(tasks) == total_tasks
